@@ -474,6 +474,17 @@ export function getSettingsPanelHtml(): string {
                 </div>
             </div>
         </div>
+
+        <div class="filter-group">
+            <h3>Composer Features</h3>
+            <div class="filter-description">Configure composer behavior</div>
+            <div class="filter-options">
+                <div class="filter-option">
+                    <input type="checkbox" id="auto-focus">
+                    <label for="auto-focus">Auto-focus composer when sending content</label>
+                </div>
+            </div>
+        </div>
     </div>
     
     <div class="accessibility-info">
@@ -570,7 +581,20 @@ export function getSettingsPanelHtml(): string {
             // Handle feature toggle changes
             document.getElementById('ios-features').addEventListener('change', () => {
                 const toggles = {
-                    iOSFeatures: document.getElementById('ios-features').checked
+                    iOSFeatures: document.getElementById('ios-features').checked,
+                    autoFocusComposer: document.getElementById('auto-focus').checked
+                };
+                
+                vscode.postMessage({
+                    command: 'updateFeatureToggles',
+                    toggles: toggles
+                });
+            });
+
+            document.getElementById('auto-focus').addEventListener('change', () => {
+                const toggles = {
+                    iOSFeatures: document.getElementById('ios-features').checked,
+                    autoFocusComposer: document.getElementById('auto-focus').checked
                 };
                 
                 vscode.postMessage({
@@ -601,6 +625,7 @@ export function getSettingsPanelHtml(): string {
                     case 'updateFeatureToggles':
                         featureToggles = message.toggles;
                         document.getElementById('ios-features').checked = featureToggles.iOSFeatures;
+                        document.getElementById('auto-focus').checked = featureToggles.autoFocusComposer;
                         break;
                     case 'showNotification':
                         showNotification(message.type, message.message);

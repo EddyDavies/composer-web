@@ -72,6 +72,14 @@ Available through Command Palette (`Cmd/Ctrl + Shift + P`) or keyboard shortcuts
 - Send only screenshot: `Cmd/Ctrl + Shift + '`
 - iOS Simulator: Available in command palette when enabled
 
+## Settings
+
+The extension can be configured through the settings panel:
+
+1. **iOS Features**: Enable iOS simulator integration (Beta)
+2. **Keybindings**: Customize keyboard shortcuts
+3. **Auto-focus Composer**: Automatically focus the composer window when sending content
+
 ## Usage Tips
 
 1. **Status Bar Indicator**:

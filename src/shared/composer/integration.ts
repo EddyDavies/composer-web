@@ -15,22 +15,26 @@ import {
   delay,
 } from "../utils/clipboard";
 import { ToastService } from "../utils/toast";
+import { FeatureToggleManager } from "../config/feature-toggles";
 
 export class ComposerIntegration {
   private static instance: ComposerIntegration;
   private readonly context: vscode.ExtensionContext;
   private composerOpened: boolean = false;
+  private featureToggleManager: FeatureToggleManager;
   private toastService: ToastService;
 
   private constructor(context: vscode.ExtensionContext) {
     this.context = context;
+    this.featureToggleManager = FeatureToggleManager.getInstance();
     this.toastService = ToastService.getInstance();
   }
 
-  public static getInstance(
-    context: vscode.ExtensionContext
-  ): ComposerIntegration {
+  public static getInstance(context?: vscode.ExtensionContext): ComposerIntegration {
     if (!ComposerIntegration.instance) {
+      if (!context) {
+        throw new Error("Context must be provided when creating ComposerIntegration instance");
+      }
       ComposerIntegration.instance = new ComposerIntegration(context);
     }
     return ComposerIntegration.instance;
@@ -43,9 +47,12 @@ export class ComposerIntegration {
     try {
       await vscode.commands.executeCommand("aichat.newchataction");
       this.composerOpened = true;
-      // Focus the composer panel
-      await vscode.commands.executeCommand("workbench.panel.aichat.view.focus");
-      await delay(100);
+      
+      // Only focus if the feature is enabled
+      if (this.featureToggleManager.isAutoFocusEnabled()) {
+        await vscode.commands.executeCommand("workbench.panel.aichat.view.focus");
+        await delay(100);
+      }
     } catch {
       this.toastService.showError(
         "Failed to open composer. Please make sure Cursor is installed and configured."
@@ -66,64 +73,66 @@ export class ComposerIntegration {
 
     const formattedLogs = logs ? this.formatLogs(logs) : "";
 
-    while (
-      (screenshot && !imageSuccess && imageAttempt <= maxRetries) ||
-      (formattedLogs && !textSuccess && textAttempt <= maxRetries)
-    ) {
-      try {
-        await this.openComposer();
+    try {
+      while (
+        (screenshot && !imageSuccess && imageAttempt <= maxRetries) ||
+        (formattedLogs && !textSuccess && textAttempt <= maxRetries)
+      ) {
+        try {
+          await this.openComposer();
 
-        if (screenshot && !imageSuccess) {
-          await clearClipboard();
-          try {
-            await this.sendImageToComposer(screenshot);
-            await delay(50);
-            await vscode.commands.executeCommand(
-              "editor.action.clipboardPasteAction"
-            );
-            imageSuccess = true;
-          } catch (err) {
-            if (imageAttempt === maxRetries) {
-              throw new Error(`Failed to send image: ${String(err)}`);
+          if (screenshot && !imageSuccess) {
+            await clearClipboard();
+            try {
+              await this.sendImageToComposer(screenshot);
+              await delay(50);
+              await vscode.commands.executeCommand(
+                "editor.action.clipboardPasteAction"
+              );
+              imageSuccess = true;
+            } catch (err) {
+              if (imageAttempt === maxRetries) {
+                throw new Error(`Failed to send image: ${String(err)}`);
+              }
+              imageAttempt++;
+              await delay(50);
             }
-            imageAttempt++;
-            await delay(50);
           }
-        }
 
-        if (formattedLogs && !textSuccess) {
-          await delay(50);
-          await clearClipboard();
-          try {
-            await this.prepareTextForComposer(formattedLogs);
+          if (formattedLogs && !textSuccess) {
             await delay(50);
-            await vscode.commands.executeCommand(
-              "editor.action.clipboardPasteAction"
-            );
-            textSuccess = true;
-          } catch (err) {
-            if (textAttempt === maxRetries) {
-              throw new Error(`Failed to send logs: ${String(err)}`);
+            await clearClipboard();
+            try {
+              await this.prepareTextForComposer(formattedLogs);
+              await delay(50);
+              await vscode.commands.executeCommand(
+                "editor.action.clipboardPasteAction"
+              );
+              textSuccess = true;
+            } catch (err) {
+              if (textAttempt === maxRetries) {
+                throw new Error(`Failed to send logs: ${String(err)}`);
+              }
+              textAttempt++;
+              await delay(50);
             }
-            textAttempt++;
-            await delay(50);
           }
-        }
 
-        if ((!screenshot || imageSuccess) && (!formattedLogs || textSuccess)) {
-          await this.showSuccessNotification();
-          return;
+          if ((!screenshot || imageSuccess) && (!formattedLogs || textSuccess)) {
+            await this.showSuccessNotification();
+            return;
+          }
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          this.toastService.showError(
+            `Failed to send data to composer: ${errorMessage}`
+          );
+          throw error;
         }
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
-        this.toastService.showError(
-          `Failed to send data to composer: ${errorMessage}`
-        );
-        throw error;
-      } finally {
-        this.composerOpened = false;
       }
+    } finally {
+      this.composerOpened = false;
     }
   }
 
