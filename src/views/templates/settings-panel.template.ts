@@ -84,18 +84,18 @@ export function getSettingsPanelHtml(): string {
             overflow: hidden;
             border: none;
         }
-        
+
         #reset-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
             filter: brightness(1.1);
         }
-        
+
         #reset-btn:active {
             transform: translateY(1px);
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
         }
-        
+
         #reset-btn::before {
             content: "↺";
             margin-right: 8px;
@@ -414,12 +414,12 @@ export function getSettingsPanelHtml(): string {
 </head>
 <body>
     <h1>Settings</h1>
-    
+
     <div id="notifications-container"></div>
 
     <div class="log-filters">
         <h2>Log Filtering</h2>
-        
+
         <div class="filter-group">
             <h3>Console Logs</h3>
             <div class="filter-description">Select which console log types to collect and send</div>
@@ -462,7 +462,7 @@ export function getSettingsPanelHtml(): string {
             </div>
         </div>
     </div>
-    
+
     <div class="beta-features">
         <div class="filter-group">
             <h3>iOS Features</h3>
@@ -485,8 +485,19 @@ export function getSettingsPanelHtml(): string {
                 </div>
             </div>
         </div>
+
+        <div class="filter-group">
+            <h3>Log Management</h3>
+            <div class="filter-description">Configure log clearing behavior</div>
+            <div class="filter-options">
+                <div class="filter-option">
+                    <input type="checkbox" id="confirm-clear-logs">
+                    <label for="confirm-clear-logs">Confirm before clearing logs</label>
+                </div>
+            </div>
+        </div>
     </div>
-    
+
     <div class="accessibility-info">
         <p>You can use the following modifiers: ${
           isMac ? "Command (⌘), Control, Option, Shift" : "Ctrl, Alt, Shift"
@@ -507,12 +518,12 @@ export function getSettingsPanelHtml(): string {
         (function() {
             const vscode = acquireVsCodeApi();
             const isMac = ${isMac};
-            
+
             // Request keybindings and settings on load
             vscode.postMessage({ command: 'getKeybindings' });
             vscode.postMessage({ command: 'getLogFilters' });
             vscode.postMessage({ command: 'getFeatureToggles' });
-            
+
             // Map from VSCode keybinding format to display format
             const keyDisplayMap = {
                 'ctrl': 'Ctrl',
@@ -534,7 +545,7 @@ export function getSettingsPanelHtml(): string {
                 ';': ';',
                 "'": "'"
             };
-            
+
             // Command descriptions
             const commandDescriptions = {
                 'web-preview.smartCapture': 'Connect to a browser tab or capture content from the currently connected tab.',
@@ -543,17 +554,17 @@ export function getSettingsPanelHtml(): string {
                 'web-preview.sendScreenshot': 'Capture a screenshot of the connected tab and send it to Composer.',
                 'web-preview.showLogLength': 'Display the current number of log lines and entries.'
             };
-            
+
             let recording = false;
             let activeEl = null;
             let keybindings = [];
             let logFilters = null;
             let featureToggles = null;
-            
+
             document.getElementById('reset-btn').addEventListener('click', () => {
                 vscode.postMessage({ command: 'resetToDefault' });
             });
-            
+
             // Handle log filter changes
             document.querySelectorAll('.filter-option input[type="checkbox"]').forEach(checkbox => {
                 checkbox.addEventListener('change', () => {
@@ -570,7 +581,7 @@ export function getSettingsPanelHtml(): string {
                             errorsOnly: document.getElementById('network-errors-only').checked
                         }
                     };
-                    
+
                     vscode.postMessage({
                         command: 'updateLogFilters',
                         filters: filters
@@ -579,34 +590,29 @@ export function getSettingsPanelHtml(): string {
             });
 
             // Handle feature toggle changes
-            document.getElementById('ios-features').addEventListener('change', () => {
+            // Function to update feature toggles
+            function updateFeatureToggles() {
                 const toggles = {
                     iOSFeatures: document.getElementById('ios-features').checked,
-                    autoFocusComposer: document.getElementById('auto-focus').checked
+                    autoFocusComposer: document.getElementById('auto-focus').checked,
+                    confirmClearLogs: document.getElementById('confirm-clear-logs').checked
                 };
-                
-                vscode.postMessage({
-                    command: 'updateFeatureToggles',
-                    toggles: toggles
-                });
-            });
 
-            document.getElementById('auto-focus').addEventListener('change', () => {
-                const toggles = {
-                    iOSFeatures: document.getElementById('ios-features').checked,
-                    autoFocusComposer: document.getElementById('auto-focus').checked
-                };
-                
                 vscode.postMessage({
                     command: 'updateFeatureToggles',
                     toggles: toggles
                 });
-            });
+            }
+
+            // Add event listeners to all feature toggle checkboxes
+            document.getElementById('ios-features').addEventListener('change', updateFeatureToggles);
+            document.getElementById('auto-focus').addEventListener('change', updateFeatureToggles);
+            document.getElementById('confirm-clear-logs').addEventListener('change', updateFeatureToggles);
 
             // Handle messages from the extension
             window.addEventListener('message', event => {
                 const message = event.data;
-                
+
                 switch (message.command) {
                     case 'updateKeybindings':
                         keybindings = message.keybindings;
@@ -626,25 +632,26 @@ export function getSettingsPanelHtml(): string {
                         featureToggles = message.toggles;
                         document.getElementById('ios-features').checked = featureToggles.iOSFeatures;
                         document.getElementById('auto-focus').checked = featureToggles.autoFocusComposer;
+                        document.getElementById('confirm-clear-logs').checked = featureToggles.confirmClearLogs;
                         break;
                     case 'showNotification':
                         showNotification(message.type, message.message);
                         break;
                 }
             });
-            
+
             function renderKeybindings() {
                 const container = document.getElementById('keybindings-container');
                 container.innerHTML = '';
-                
+
                 keybindings.forEach(keybind => {
                     const commandId = keybind.command;
                     const keybindValue = isMac ? keybind.mac : keybind.key;
-                    
+
                     // Create command section
                     const section = document.createElement('div');
                     section.className = 'section';
-                    
+
                     // Command name
                     const commandTitle = commandId.split('.').pop();
                     const formattedTitle = commandTitle
@@ -652,7 +659,7 @@ export function getSettingsPanelHtml(): string {
                         .split(' ')
                         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
                         .join(' ');
-                    
+
                     // Command description
                     if (commandDescriptions[commandId]) {
                         const descriptionEl = document.createElement('div');
@@ -660,14 +667,14 @@ export function getSettingsPanelHtml(): string {
                         descriptionEl.textContent = commandDescriptions[commandId];
                         section.appendChild(descriptionEl);
                     }
-                    
+
                     // Create keybinding row
                     const row = createKeybindRow(formattedTitle, commandId, keybindValue);
                     section.appendChild(row);
-                    
+
                     container.appendChild(section);
                 });
-                
+
                 // Add event listeners for keybind displays
                 document.querySelectorAll('.keybind-display').forEach(el => {
                     el.addEventListener('click', activateKeybindCapture);
@@ -678,41 +685,41 @@ export function getSettingsPanelHtml(): string {
                     });
                 });
             }
-            
+
             function createKeybindRow(label, commandId, keybind) {
                 const row = document.createElement('div');
                 row.className = 'row';
-                
+
                 // Command name
                 const nameEl = document.createElement('div');
                 nameEl.className = 'command-name';
                 nameEl.textContent = label;
                 row.appendChild(nameEl);
-                
+
                 // Keybind input
                 const keybindContainer = document.createElement('div');
                 keybindContainer.className = 'keybind-input';
-                
+
                 const keybindDisplay = document.createElement('div');
                 keybindDisplay.className = 'keybind-display';
                 keybindDisplay.tabIndex = 0;
                 keybindDisplay.dataset.command = commandId;
-                
+
                 if (keybind) {
                     keybindDisplay.innerHTML = formatKeybindDisplay(keybind);
                 } else {
                     keybindDisplay.innerHTML = '<span class="keybind-placeholder">Click to set keybinding</span>';
                 }
-                
+
                 keybindContainer.appendChild(keybindDisplay);
                 row.appendChild(keybindContainer);
-                
+
                 return row;
             }
-            
+
             function formatKeybindDisplay(keybind) {
                 if (!keybind) return '<span class="keybind-placeholder">Click to set keybinding</span>';
-                
+
                 return keybind.split('+')
                     .map(key => key.trim().toLowerCase())
                     .map(key => {
@@ -721,21 +728,21 @@ export function getSettingsPanelHtml(): string {
                     })
                     .join(' + ');
             }
-            
+
             function activateKeybindCapture(e) {
                 // If we're already capturing on another element, finish that capture first
                 if (recording && recording !== this) {
                     // Save current element to apply capture to after finishing previous one
                     const nextElement = this;
-                    
+
                     // Get data for current capture
                     const prevCommandId = recording.dataset.command;
                     const prevElement = recording;
-                    
+
                     // First cancel existing capture
                     const existingKeybind = keybindings.find(kb => kb.command === prevCommandId);
                     const keybindValue = isMac ? existingKeybind?.mac : existingKeybind?.key;
-                    
+
                     // Reset UI for previous element
                     prevElement.classList.remove('active');
                     if (keybindValue) {
@@ -743,30 +750,30 @@ export function getSettingsPanelHtml(): string {
                     } else {
                         prevElement.innerHTML = '<span class="keybind-placeholder">Click to set keybinding</span>';
                     }
-                    
+
                     // Clean up previous event listeners
                     window.removeEventListener('keydown', recording._captureKey, true);
                     window.removeEventListener('keyup', recording._preventEvent, true);
                     window.removeEventListener('keypress', recording._preventEvent, true);
                     window.removeEventListener('click', recording._handleOutsideClick);
-                    
+
                     // Reset state
                     recording = null;
-                    
+
                     // Now continue with new element
                     setTimeout(() => {
                         activateKeybindCapture.call(nextElement, e);
                     }, 0);
                     return;
                 }
-                
+
                 // Proceed with normal activation
                 const el = this;
                 const commandId = el.dataset.command;
                 el.classList.add('active');
                 el.innerHTML = '<span class="keybind-placeholder">Press keybinding...</span>';
                 recording = el;
-                
+
                 // Focus handling to ensure we can capture key events
                 el.focus();
 
@@ -776,7 +783,7 @@ export function getSettingsPanelHtml(): string {
                     e.stopImmediatePropagation();
                     return false;
                 }
-                
+
                 function captureKey(e) {
                     // Always prevent default and stop propagation first
                     preventEvent(e);
@@ -786,47 +793,47 @@ export function getSettingsPanelHtml(): string {
                         finishCapture(true);
                         return;
                     }
-                    
+
                     // Don't allow single modifier keys as keybindings
                     if (['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) {
                         return;
                     }
-                    
+
                     let keys = [];
                     if (e.ctrlKey) keys.push('ctrl');
                     if (e.altKey) keys.push('alt');
                     if (e.shiftKey) keys.push('shift');
                     if (e.metaKey) keys.push(isMac ? 'cmd' : 'meta');
-                    
+
                     // Add the main key
                     let mainKey = e.key.toLowerCase();
-                    
+
                     // Handle special keys
                     if (mainKey === ' ') mainKey = 'space';
                     if (mainKey === 'arrowup') mainKey = 'up';
                     if (mainKey === 'arrowdown') mainKey = 'down';
                     if (mainKey === 'arrowleft') mainKey = 'left';
                     if (mainKey === 'arrowright') mainKey = 'right';
-                    
+
                     // Don't add the key if it's a modifier we already captured
                     if (!['control', 'alt', 'shift', 'meta'].includes(mainKey)) {
                         keys.push(mainKey);
                     }
-                    
+
                     if (keys.length === 0) return;
-                    
+
                     const keybind = keys.join('+');
-                    
+
                     // Update display immediately
                     el.innerHTML = formatKeybindDisplay(keybind);
-                    
+
                     // Send update to backend
                     updateKeybinding(commandId, keybind);
-                    
+
                     // Finish capture
                     finishCapture(false);
                 }
-                
+
                 // Handle clicks outside the keybinding input
                 function handleOutsideClick(e) {
                     // If the click is outside the current capturing element
@@ -834,64 +841,64 @@ export function getSettingsPanelHtml(): string {
                         finishCapture(true); // Cancel the capture
                     }
                 }
-                
+
                 // Store references to the event handlers on the element for later removal
                 el._preventEvent = preventEvent;
                 el._captureKey = captureKey;
                 el._handleOutsideClick = handleOutsideClick;
-                
+
                 function finishCapture(canceled = false) {
                     el.classList.remove('active');
-                    
+
                     // If canceled, restore the previous keybinding
                     if (canceled) {
                         const existingKeybind = keybindings.find(kb => kb.command === commandId);
                         const keybindValue = isMac ? existingKeybind?.mac : existingKeybind?.key;
-                        
+
                         if (keybindValue) {
                             el.innerHTML = formatKeybindDisplay(keybindValue);
                         } else {
                             el.innerHTML = '<span class="keybind-placeholder">Click to set keybinding</span>';
                         }
                     }
-                    
+
                     // Remove all event listeners
                     window.removeEventListener('keydown', captureKey, true);
                     window.removeEventListener('keyup', preventEvent, true);
                     window.removeEventListener('keypress', preventEvent, true);
                     window.removeEventListener('click', handleOutsideClick);
-                    
+
                     // Remove focus
                     el.blur();
-                    
+
                     // Reset recording
                     recording = null;
                 }
-                
+
                 // Add event listeners in capture phase (true parameter)
                 window.addEventListener('keydown', captureKey, true);
                 window.addEventListener('keyup', preventEvent, true);
                 window.addEventListener('keypress', preventEvent, true);
-                
+
                 // Add click listener to handle clicks outside the element
                 // Use setTimeout to ensure this click event finishes first
                 setTimeout(() => {
                     window.addEventListener('click', handleOutsideClick);
                 }, 0);
             }
-            
+
             function updateKeybinding(commandId, keybind) {
                 // Get the other platform's keybinding to preserve it
                 const existingKeybind = keybindings.find(k => k.command === commandId);
                 const otherPlatformKeybind = isMac ? existingKeybind?.key : existingKeybind?.mac;
-                
+
                 // For debugging: log the data being sent
                 console.log('Sending keybinding update:', {
                     command: commandId,
                     key: isMac ? otherPlatformKeybind : keybind,
                     mac: isMac ? keybind : otherPlatformKeybind
                 });
-                
+
                 vscode.postMessage({
                     command: 'updateKeybinding',
                     data: {
@@ -905,16 +912,16 @@ export function getSettingsPanelHtml(): string {
             // Show notification in the panel
             function showNotification(type, message) {
                 const container = document.getElementById('notifications-container');
-                
+
                 // Create notification element
                 const notification = document.createElement('div');
                 notification.className = \`notification \${type}\`;
-                
+
                 // Message content
                 const messageSpan = document.createElement('span');
                 messageSpan.textContent = message;
                 notification.appendChild(messageSpan);
-                
+
                 // Close button
                 const closeBtn = document.createElement('button');
                 closeBtn.className = 'close-btn';
@@ -923,10 +930,10 @@ export function getSettingsPanelHtml(): string {
                     container.removeChild(notification);
                 });
                 notification.appendChild(closeBtn);
-                
+
                 // Add to container
                 container.appendChild(notification);
-                
+
                 // Auto-remove after 5 seconds
                 setTimeout(() => {
                     if (container.contains(notification)) {

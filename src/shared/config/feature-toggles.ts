@@ -3,6 +3,7 @@ import * as vscode from "vscode";
 export interface FeatureToggles {
   iOSFeatures: boolean;
   autoFocusComposer: boolean;
+  confirmClearLogs: boolean;
 }
 
 export class FeatureToggleManager {
@@ -59,6 +60,7 @@ export class FeatureToggleManager {
     return {
       iOSFeatures: false, // iOS features disabled by default
       autoFocusComposer: true, // Enable by default
+      confirmClearLogs: false, // Ask for confirmation by default
     };
   }
 
@@ -74,5 +76,9 @@ export class FeatureToggleManager {
 
   public isAutoFocusEnabled(): boolean {
     return this.getToggles().autoFocusComposer;
+  }
+
+  public isConfirmClearLogsEnabled(): boolean {
+    return this.getToggles().confirmClearLogs;
   }
 }

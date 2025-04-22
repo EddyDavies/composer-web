@@ -1,6 +1,7 @@
 import { BrowserMonitor } from "../monitor";
 import { ComposerIntegration } from "../../shared/composer/integration";
 import { ToastService } from "../../shared/utils/toast";
+import { FeatureToggleManager } from "../../shared/config/feature-toggles";
 
 export class BrowserCommandHandlers {
   private browserMonitor: BrowserMonitor;
@@ -30,14 +31,21 @@ export class BrowserCommandHandlers {
       return;
     }
 
-    const confirmed = await this.toastService.showConfirmation(
-      "Are you sure you want to clear all browser logs?"
-    );
+    const featureToggleManager = FeatureToggleManager.getInstance();
+    const shouldConfirm = featureToggleManager.isConfirmClearLogsEnabled();
 
-    if (confirmed) {
-      this.browserMonitor.clearLogs();
-      this.toastService.showLogsClearedSuccess();
+    if (shouldConfirm) {
+      const confirmed = await this.toastService.showConfirmation(
+        "Are you sure you want to clear all browser logs?"
+      );
+
+      if (!confirmed) {
+        return;
+      }
     }
+
+    this.browserMonitor.clearLogs();
+    this.toastService.showLogsClearedSuccess();
   }
 
   public async handleSendLogs(): Promise<void> {
@@ -155,10 +163,10 @@ export class BrowserCommandHandlers {
     const logs = this.browserMonitor.getLogs();
     const formattedLogs = this.composerIntegration.getFormattedLogs(logs);
     const lineCount = formattedLogs.split("\n").length;
-    
+
     const consoleCount = logs.console.length;
     const networkCount = logs.network.length;
-    
+
     this.toastService.showInfo(
       `Total Lines: ${lineCount} | Console: ${consoleCount} | Network: ${networkCount}\nLog Stats`
     );
