@@ -40,6 +40,10 @@ export class CommandHandlers {
     return this.browserCommandHandlers.handleSendScreenshot();
   }
 
+  public async handleShowLogLength(): Promise<void> {
+    return this.browserCommandHandlers.handleShowLogLength();
+  }
+
   // iOS commands
   public async handleConnectiOSSimulator(): Promise<void> {
     return this.iOSCommandHandlers.handleConnectiOSSimulator();

@@ -272,4 +272,8 @@ export class ComposerIntegration {
 
     return result;
   }
+
+  public getFormattedLogs(logs: LogData): string {
+    return this.formatLogs(logs);
+  }
 }

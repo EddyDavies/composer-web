@@ -529,7 +529,8 @@ export function getSettingsPanelHtml(): string {
                 'web-preview.smartCapture': 'Connect to a browser tab or capture content from the currently connected tab.',
                 'web-preview.clearLogs': 'Clear all collected browser logs.',
                 'web-preview.sendLogs': 'Send collected browser logs to Composer.',
-                'web-preview.sendScreenshot': 'Capture a screenshot of the connected tab and send it to Composer.'
+                'web-preview.sendScreenshot': 'Capture a screenshot of the connected tab and send it to Composer.',
+                'web-preview.showLogLength': 'Display the current number of log lines and entries.'
             };
             
             let recording = false;

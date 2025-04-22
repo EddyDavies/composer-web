@@ -132,6 +132,11 @@
         "command": "web-preview.captureiOS",
         "title": "Capture iOS Simulator Screenshot",
         "category": "Composer Web"
+      },
+      {
+        "command": "web-preview.showLogLength",
+        "title": "Show Log Line Count",
+        "category": "Composer Web"
       }
     ],
     "keybindings": [
@@ -154,6 +159,11 @@
         "command": "web-preview.sendScreenshot",
         "key": "ctrl+shift+'",
         "mac": "cmd+shift+'"
+      },
+      {
+        "command": "web-preview.showLogLength",
+        "key": "alt+ctrl+\\",
+        "mac": "alt+cmd+\\"
       }
     ],
     "menus": {

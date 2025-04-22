@@ -145,4 +145,22 @@ export class BrowserCommandHandlers {
       }
     }
   }
+
+  public async handleShowLogLength(): Promise<void> {
+    if (!this.browserMonitor.isPageConnected()) {
+      this.toastService.showNoTabConnected();
+      return;
+    }
+
+    const logs = this.browserMonitor.getLogs();
+    const formattedLogs = this.composerIntegration.getFormattedLogs(logs);
+    const lineCount = formattedLogs.split("\n").length;
+    
+    const consoleCount = logs.console.length;
+    const networkCount = logs.network.length;
+    
+    this.toastService.showInfo(
+      `Total Lines: ${lineCount} | Console: ${consoleCount} | Network: ${networkCount}\nLog Stats`
+    );
+  }
 }

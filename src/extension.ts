@@ -67,6 +67,9 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand("web-preview.captureiOS", () =>
       commandHandlers.handleCaptureiOS()
     ),
+    vscode.commands.registerCommand("web-preview.showLogLength", () =>
+      commandHandlers.handleShowLogLength()
+    ),
     vscode.window.registerWebviewViewProvider(
       SettingsPanel.viewType,
       settingsPanel
