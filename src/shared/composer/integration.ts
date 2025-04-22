@@ -43,6 +43,8 @@ export class ComposerIntegration {
     try {
       await vscode.commands.executeCommand("aichat.newchataction");
       this.composerOpened = true;
+      // Focus the composer panel
+      await vscode.commands.executeCommand("workbench.panel.aichat.view.focus");
       await delay(100);
     } catch {
       this.toastService.showError(
