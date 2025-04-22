@@ -186,7 +186,7 @@ export class KeybindingManager {
             keybindingEntries.push({
               key: customKey,
               command: kb.command,
-              when: "editorTextFocus",
+              // Don't restrict to editorTextFocus so keybindings work everywhere
             });
           }
         });
@@ -201,7 +201,7 @@ export class KeybindingManager {
             keybindingEntries.push({
               key: defaultKey,
               command: kb.command,
-              when: "editorTextFocus",
+              // Don't restrict to editorTextFocus so keybindings work everywhere
             });
           }
         }
